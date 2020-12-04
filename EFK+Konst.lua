@@ -4,7 +4,7 @@ script_author('TMoore')
 
 require "lib.moonloader"
 local dlstatus = require('moonloader').download_status
-local lnotf, notify = pcall(import, "lib_imgui_notf.lua")
+local anotf, notify = pcall(import, 'lib_imgui_notf.lua')
 local encoding = require "encoding"
 local inicfg = require "inicfg"
 local sampev = require "lib.samp.events"
@@ -17,36 +17,14 @@ encoding.default = 'CP1251'
 u8 = encoding.UTF8
 
 -- Переменные
-local directIni = 'EFK+Konst.ini'
 local WindowOne = imgui.ImBool(false)
 local EFK = imgui.ImBool(false)
 local X, Y = getScreenResolution()
 local Konst = imgui.ImBool(false)
 
-update_state = false
-
-local script_vers = 1.0
-local version_Konst = 1.1
-local version_EFK = 0.9
-
-local update_url = "https://raw.githubusercontent.com/TMoore-frog/Konstin-EFK/main/update.ini" -- тут тоже свою ссылку
-local update_path = getWorkingDirectory() .. "/update.ini" -- и тут свою ссылку
-
-local script_url = "https://github.com/thechampguess/scripts/blob/master/autoupdate_lesson_16.luac?raw=true" -- тут свою ссылку
-local script_path = thisScript().path
-
-Poss = 0
-
 -- Version
 VerEFK = 0.9
 VerKonst = 1.1
-
-local mainIni = inicfg.load({
-    Possas =
-    {
-      Poss = 0
-    }
-})
 
 function imgui.CenterText(text)
     local width = imgui.GetWindowWidth()
@@ -375,8 +353,12 @@ function imgui.OnDrawFrame()
                 imgui.NewLine()
                 imgui.TextColoredRGB('42.1 За побег из-под ареста или из-под стражи, нарушителю присваивается 6 уровень розыска.')
                 imgui.NewLine()
-                imgui.SetCursorPos(imgui.ImVec2(602, 5260))
+                imgui.SetCursorPos(imgui.ImVec2(598, 5260))
                 imgui.TextColoredRGB('Автор ЕФК: {8FDC7E}Toby Wilson')
+                if imgui.Button(u8'Вернуться в меню', imgui.ImVec2(-1, 25)) then
+                    EFK.v = false
+                        WindowOne.v = true
+                end
             imgui.End()
     end
 
@@ -732,6 +714,11 @@ function imgui.OnDrawFrame()
                 imgui.NewLine()
                 imgui.TextColoredRGB('{FBB426}Статья 80')
                 imgui.TextColoredRGB('Положения глав 1, 6 и 7 Конституции не могут быть пересмотрены, в ином случае принимается новая Конституция.')
+                imgui.NewLine()
+                if imgui.Button(u8'Вернуться в меню', imgui.ImVec2(-1, 25)) then  
+                    Konst.v = false
+                        WindowOne.v = true
+                end
             imgui.End()
     end
 end
@@ -740,47 +727,57 @@ function main()
     if not isSampLoaded() or not isSampfuncsLoaded() then return end
     while not isSampAvailable() do wait(100) end
         sampRegisterChatCommand('efk', function() WindowOne.v = not WindowOne.v imgui.Process = WindowOne.v end)
-        if Poss == 0 then
-            sampAddChatMessage('{02FFAB}[Konstant+EFK]{FFFFFF} Идет скачивание необходимых файлов', -1)
-            sampAddChatMessage('{02FFAB}[Konstant+EFK]{FFFFFF} Все файлы успешно скачаны | Скрипт будет перезагружен', -1)
-        elseif Poss == 1 then
-                notify.addNotify('{02FFAB}[Konstant+EFK]{FFFFFF} Скрипт успешно загружен','Открыть меню, можно командой: {02FFAB}/efk\nАвтор скрипта: {02FFAB}TMoore',1,1,4)
-        end
 
-        downloadUrlToFile(update_url, update_path, function(id, status)
-            if status == dlstatus.STATUS_ENDDOWNLOADDATA then
-                updateIni = inicfg.load(nil, update_path)
-                if tonumber(updateIni.info.vers) > script_vers then
-                    sampAddChatMessage("Есть обновление! Версия: " .. updateIni.info.vers_text, -1)
-                    update_state = true
-                end
-                os.remove(update_path)
-            end
-        end)
-
-        if not lnotf then
-            downloadUrlToFile('https://raw.githubusercontent.com/TMoore-frog/Konstin-EFK/main/lib_imgui_notf.lua','moonloader\\notify_imgui_notf.lua', function(id, status, p1, p2)
+        if anotf then
+            notify.addNotify('{02FFAB}[Konstant+EFK]{FFFFFF} Скрипт успешно загружен','Открыть меню, можно командой: {02FFAB}/efk\nАвтор скрипта: {02FFAB}TMoore',1,1,4)
+        elseif not anotf then
+            downloadUrlToFile('https://raw.githubusercontent.com/TMoore-frog/Downloads_Lib/main/lib_imgui_notf.lua','moonloader\\lib_imgui_notf.lua', function(id, status, p1, p2)
                 if status == dlstatus.STATUS_ENDDOWNLOADDATA then
-                    Poss = Poss + 1
-                        mainIni.Possas.Poss = Poss
-                            inicfg.save(mainIni, directIni)
-                                sampAddChatMessage('{02FFAB}[Konstant+EFK]{FFFFFF} Скачаны необходимые файлы, перезагружаю скрипт', -1)
-                                   thisScript():reload()
+                    print('Файл lib_imgui_notf.lua был скачан')
+                        print('Перезапускаю скрипт для установки!')
+                            thisScript():reload()
                 end
             end)
         end
 
     while true do wait(0)
 
-        if update_state then
-            downloadUrlToFile(script_url, script_path, function(id, status)
-                if status == dlstatus.STATUS_ENDDOWNLOADDATA then
-                    sampAddChatMessage("Скрипт успешно обновлен!", -1)
-                    thisScript():reload()
-                end
-            end)
-            break
-        end
+
 
     end
+end
+
+function goupdate()
+    sampAddChatMessage(('{02FFAB}[Konstant+EFK]{FFFFFF} Обнаружено обновление. AutoReload может конфликтовать. Обновляюсь...'), color)
+    sampAddChatMessage(('{02FFAB}[Konstant+EFK]{FFFFFF} Текущая версия: '..thisScript().version..". Новая версия: "..version), color)
+    wait(300)
+    downloadUrlToFile(updatelink, thisScript().path, function(id3, status1, p13, p23) -- качает ваш файлик с latest version
+        if status1 == dlstatus.STATUS_ENDDOWNLOADDATA then
+            sampAddChatMessage(('{02FFAB}[Konstant+EFK]{FFFFFF} Обновление завершено!'), color)
+                thisScript():reload()
+        end
+    end)
+end
+
+function update()
+    local fpath = os.getenv('TEMP') .. '\\testing_version.json' -- куда будет качаться наш файлик для сравнения версии
+    downloadUrlToFile('https://gist.githubusercontent.com/atiZZZ/7507f7d4a51dc036bd275b96cc7bed38/raw/a78a8ef401c553c4309efd6a80075f56567c6c93/atiz', fpath, function(id, status, p1, p2) -- ссылку на ваш гитхаб где есть строчки которые я ввёл в теме или любой другой сайт
+        if status == dlstatus.STATUS_ENDDOWNLOADDATA then
+        local f = io.open(fpath, 'r') -- открывает файл
+        if f then
+            local info = decodeJson(f:read('*a')) -- читает
+                updatelink = info.updateurl
+                if info and info.latest then
+                version = tonumber(info.latest) -- переводит версию в число
+                    if version > tonumber(thisScript().version) then -- если версия больше чем версия установленная то...
+                        lua_thread.create(goupdate) -- апдейт
+                    else -- если меньше, то
+                        update = false -- не даём обновиться 
+                            print('Ваша версия: '..thisScript().version)
+                                print('Обновление не требуется')
+                    end
+                end
+            end
+        end
+    end)
 end
