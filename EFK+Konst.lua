@@ -19,12 +19,24 @@ u8 = encoding.UTF8
 -- Переменные
 local WindowOne = imgui.ImBool(false)
 local EFK = imgui.ImBool(false)
+local Version_change = imgui.ImBuffer(65536)
+local UpdatingWindow = imgui.ImBool(false)
 local X, Y = getScreenResolution()
 local Konst = imgui.ImBool(false)
 
+local Version_Script = [[
+Version 1.0
+- Добавил ЕФК и Конституцию для сервера Меса.
+- Добавил Авто-обновление.
+]]
+
 -- Version
 VerEFK = 0.9
-VerKonst = 1.1
+VerKonst = 0.9
+
+function infinity()
+    Version_change.v = u8:encode(Version_Script)
+end
 
 function imgui.CenterText(text)
     local width = imgui.GetWindowWidth()
@@ -89,15 +101,15 @@ end
 
 function imgui.OnDrawFrame()
 
-    if not WindowOne.v and not Konst.v and not EFK.v then
+    if not WindowOne.v and not Konst.v and not EFK.v and not UpdatingWindow.v then
         imgui.Process = false
     end
 
     if WindowOne.v then
         imgui.SetNextWindowSize(imgui.ImVec2(750, 460), imgui.Cond.FirstUseEver)
         imgui.SetNextWindowPos(imgui.ImVec2(X / 2, Y / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
-            imgui.Begin(u8'Единый Федеральный кодекс + Конституция Штата Меса', WindowOne, imgui.WindowFlags.NoResize)
-            imgui.SetCursorPos(imgui.ImVec2(175, 217.5))
+            imgui.Begin(u8'Единый Федеральный кодекс + Конституция Штата Меса | Версия: '..thisScript().version, WindowOne, imgui.WindowFlags.NoResize)
+            imgui.SetCursorPos(imgui.ImVec2(175, 117.5))
             if imgui.Button(u8'ЕФК', imgui.ImVec2(200, 25)) then
                 WindowOne.v = false
                     EFK.v = true
@@ -107,6 +119,13 @@ function imgui.OnDrawFrame()
                 WindowOne.v = false
                     Konst.v = true
             end
+            imgui.SetCursorPos(imgui.ImVec2(275, 150))
+            if imgui.Button(u8'Проверить на обновления', imgui.ImVec2(200, 25)) then
+                UpdatingWindow.v = true
+                    WindowOne.v = false
+            end
+            imgui.NewLine()
+            imgui.InputTextMultiline('##VersionBlog', Version_change, imgui.ImVec2(735, 255), imgui.InputTextFlags.ReadOnly)
             imgui.End()
     end
 
@@ -740,11 +759,7 @@ function main()
             end)
         end
 
-    while true do wait(0)
-
-
-
-    end
+        lua_thread.create(infinity)
 end
 
 function goupdate()
